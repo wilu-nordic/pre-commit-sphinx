@@ -14,12 +14,14 @@ def requires_build(filenames: Sequence[str], always_build: bool) -> bool:
     return True
 
 
-def build(cache_dir: str, html_dir: str, src_dir: str):
+def build(cache_dir: str, html_dir: str, src_dir: str, warnings_as_errors: bool):
     """ Invokes sphinx-build to build the docs
     """
 
+    warnins = '-W' if warnings_as_errors else ''
+
     # Run Sphinx to build the documentation
-    ret = os.system(f'sphinx-build -b html -d {cache_dir} {src_dir} {html_dir}')
+    ret = os.system(f'sphinx-build {warnins} -b html -d {cache_dir} {src_dir} {html_dir} ')
 
     # It's very weird that pre-commit marks this as 'PASSED' if I return an error code 512...! Workaround:
     return 0 if ret == 0 else 1
@@ -48,10 +50,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         '--source-dir', type=str, default='docs/source',
         help='Directory containing documentation sources (where the conf.py file exists)',
     )
+    parser.add_argument(
+        '--warnings-as-errors', type=bool, default=False,
+        help='All sphinx warnings marked as errors',
+    )
 
     args = parser.parse_args(argv)
     if requires_build(args.filenames, args.always_build):
-        return build(args.cache_dir, args.html_dir, args.source_dir)
+        return build(args.cache_dir, args.html_dir, args.source_dir, args.warnings_as_errors)
 
     return 0
 
